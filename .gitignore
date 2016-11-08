@@ -1,0 +1,7 @@
+.DS_Store
+.ipynb_checkpoints/
+cache/
+old/
+processed_data/.DS_Store
+processed_data/fft/
+raw_data/
