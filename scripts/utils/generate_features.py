@@ -18,17 +18,17 @@ cache_directory = './cache'
 mem = Memory(cachedir=cache_directory, verbose=0)
 
 @mem.cache
-def normalize_and_bin_power_spectra(file, bin_size):
+def norm_bin_and_avg_power_spectra(file, bin_size):
 
+    def bin_power(x,bin_size):
+        return np.sum(x.reshape(-1, bin_size), axis=1)
+    
     # Load power data.
     freq, power = eegml_data_load.load_power_data(file['path'])
 
     # Handle corrupt file.
-    if power.size == []: 
+    if power.size == 0: 
         return []
-
-    def bin_power(x,bin_size):
-        return np.sum(x.reshape(-1, bin_size), axis=1)
 
     # Normalize power spectra.
     norm_power = (power.T/power.sum(axis=1)).T
@@ -36,11 +36,9 @@ def normalize_and_bin_power_spectra(file, bin_size):
     # Bin normalized power spectra. 
     num_channels = power.shape[0]
     bin_norm_power = np.array([bin_power(norm_power[i,:], bin_size) for i in np.arange(num_channels)])
+    
+    # Take average across all channels.
+    avg_bin_norm_power = bin_norm_power.mean(axis=0)
 
-    return bin_norm_power
-
-
-# In[ ]:
-
-
+    return avg_bin_norm_power
 
