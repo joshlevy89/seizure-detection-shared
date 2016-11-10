@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[27]:
 
 import os
 import numpy as np
@@ -11,10 +11,15 @@ from joblib import Memory
 import re
 
 
-# In[46]:
+# In[30]:
 
 BASE_DATA_DIR = '../raw_data'
+SAMPLING_RATE = 400
+cache_directory = './cache'
+mem = Memory(cachedir=cache_directory, verbose=0)
+
 def create_files_df():
+
     def pathToSeries(path):
         m = re.search('/(.*)_(.*)_(.*).mat',path)
         if 'train' in path: 
@@ -33,7 +38,8 @@ def create_files_df():
                          'dir_name': dir_name,'file_name':file_name})
 
     # Get Metadata for all files in raw data directory. 
-    data_dirs = [name for name in os.listdir(BASE_DATA_DIR) if os.path.isdir(os.path.join(BASE_DATA_DIR, name))]
+    data_dirs = [name for name in os.listdir(BASE_DATA_DIR) if 
+                 os.path.isdir(os.path.join(BASE_DATA_DIR, name))]
     paths = [[os.path.join(data_dir, name) for name in os.listdir(os.path.join(BASE_DATA_DIR,data_dir))] 
              for data_dir in data_dirs] 
     paths = [j for i in paths for j in i] # flatten to 1d
@@ -54,13 +60,6 @@ def create_files_df():
 
     return files_df
 
-
-# In[ ]:
-
-SAMPLING_RATE = 400
-cache_directory = './cache'
-mem = Memory(cachedir=cache_directory, verbose=0)
-
 def load_temporal_data(path):
     try: 
         mat = loadmat(os.path.join(BASE_DATA_DIR,path))
@@ -79,22 +78,4 @@ def load_power_data(path):
     freq = np.array(np.fft.fftfreq(n)*SAMPLING_RATE)[:n//2]
     power = np.abs(np.fft.fft(temporal_data))[:,:n//2]
     return freq, power
-
-
-# In[ ]:
-
-@mem.cache
-def normalize_and_bin_power_spectra(power, bin_size):
-
-    def bin_power(x,bin_size):
-        return np.sum(x.reshape(-1, bin_size), axis=1)
-
-    # Normalize power spectra.
-    norm_power = (power.T/power.sum(axis=1)).T
-    
-    # Bin normalized power spectra. 
-    num_channels = power.shape[0]
-    bin_norm_power = np.array([bin_power(norm_power[i,:], bin_size) for i in np.arange(num_channels)])
-    
-    return bin_norm_power
 
