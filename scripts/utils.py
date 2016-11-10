@@ -72,11 +72,29 @@ def load_temporal_data(path):
 
 @mem.cache
 def load_power_data(path):
-    temporal_data = load_temporal_data(path)
+    _, temporal_data = load_temporal_data(path)
     if temporal_data.size == 0:
         return np.empty(0), np.empty(0)
     n = temporal_data.shape[1]
     freq = np.array(np.fft.fftfreq(n)*SAMPLING_RATE)[:n//2]
     power = np.abs(np.fft.fft(temporal_data))[:,:n//2]
     return freq, power
+
+
+# In[ ]:
+
+@mem.cache
+def normalize_and_bin_power_spectra(power, bin_size):
+
+    def bin_power(x,bin_size):
+        return np.sum(x.reshape(-1, bin_size), axis=1)
+
+    # Normalize power spectra.
+    norm_power = (power.T/power.sum(axis=1)).T
+    
+    # Bin normalized power spectra. 
+    num_channels = power.shape[0]
+    bin_norm_power = np.array([bin_power(norm_power[i,:], bin_size) for i in np.arange(num_channels)])
+    
+    return bin_norm_power
 
